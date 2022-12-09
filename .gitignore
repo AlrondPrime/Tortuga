@@ -1,0 +1,6 @@
+build/
+*.ps1
+*.cpp
+*.json
+*.code-workspace
+CMakeLists.txt
