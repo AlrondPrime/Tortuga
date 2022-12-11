@@ -1,43 +1,23 @@
-import os, sys, re, time, psutil, json
+import os, sys, time, psutil, json
+from re import search
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QColor
 
-class ListWidget(QListWidget):
-    def __init__(self):
-        super(ListWidget, self).__init__()
-        self.apps=[]
-        self.path = R"Tortuga.json"
-        # self.itemEntered.connect(self.itemHover)
-        self.itemDoubleClicked.connect(self.sayHi)
-        # self.itemActivated.connect(self.sayBye)
-        self.itemChanged.connect(self.itemChange)
-        self.load()
-        for item in self.apps:
-            item = QListWidgetItem(item['title'])
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-            self.addItem(item)
-        self.setMouseTracking(True)
+class launcherSignals(QObject):
+    done = pyqtSignal(object)
 
-    def sayHi(self, item):
-        print("hi")
+class threadLaunch(QRunnable):  
+    def __init__(self, app):
+        super(QRunnable, self).__init__()
+        self.app = app
+        self.signals = launcherSignals()
 
-    def itemActivated(self, item):
-        print("bye")
-        return super().itemActivated(item)
-
-    def itemHover(self):
-        pass
-    # Launch game with time tracking
-    def launchGame(self, item):
-        item.setBackground( QColor(Qt.green) )
-        # item.setBackground( QColor('#7fc97f') )
-        # item.setBackground( QBrush(QColor('#7fc97f')) )
-
-        i = self.row(item)
+    def run(self):
         now = time.time()
-        if os.path.exists(self.apps[i]['path']):
-            proc = psutil.Popen(self.apps[i]['path'])
+        if os.path.exists(self.app['path']):
+            result = search(r'(?P<name>.+)/.+.exe', self.app['path'])
+            proc = psutil.Popen([], executable=self.app['path'], cwd = result.group('name'))
             name = proc.name()
             proc.wait()
             for proc2 in psutil.process_iter():
@@ -46,19 +26,57 @@ class ListWidget(QListWidget):
                     proc2.wait()
         now2 = time.time()
         session_time = int(now2-now)
-        hours = self.apps[i]['total_time']['hours']
-        minutes = self.apps[i]['total_time']['minutes']
+        hours = self.app['total_time']['hours']
+        minutes = self.app['total_time']['minutes']
         minutes += session_time // 60
         if minutes >= 60:
             hours = minutes // 60
             minutes %= 60
 
-        self.apps[i]['total_time']['hours'] = hours
-        self.apps[i]['total_time']['minutes'] = minutes
-        self.dump()
-        item.setBackground( QColor(Qt.white) )
+        self.app['total_time']['hours'] = hours
+        self.app['total_time']['minutes'] = minutes
+        self.signals.done.emit(self.app['title'])
 
-    def itemChange(self, item: QListWidgetItem) -> None:
+
+class ListWidget(QListWidget):
+    def __init__(self):
+        super(ListWidget, self).__init__()
+        self.apps=[]
+        self.path = R"Tortuga.json"
+        self.threadpool = QThreadPool()
+        # self.itemDoubleClicked.connect(self.sayHi)
+        self.itemActivated.connect(self.launchGame)
+        self.itemChanged.connect(self.itemChange)
+
+        self.load()
+        for item in self.apps:
+            item = QListWidgetItem(item['title'])
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+            self.addItem(item)
+        self.setMouseTracking(True)
+
+    # def sayHi(self, item):
+    #     print("hi")
+
+    # def sayBye(self, item):
+    #     print("bye")
+
+    def done(self, title):
+        self.dump()
+        for i, item in enumerate(self.apps):
+            if item['title'] == title:
+                self.item(i).setBackground( QColor(Qt.white) )
+
+    # Launch game with time tracking
+    def launchGame(self, item):
+        item.setBackground( QColor(Qt.green) )
+        i = self.row(item)
+        app = self.apps[i]
+        launcher = threadLaunch(app)
+        launcher.signals.done.connect(self.done)
+        self.threadpool.start(launcher) 
+
+    def itemChange(self, item):
         i = self.row(item)
         self.apps[i]['title'] = item.text()
         # return super().itemChanged(item)
@@ -66,10 +84,12 @@ class ListWidget(QListWidget):
     def addApp(self):
         path = QFileDialog.getOpenFileName(caption ="Select game to add", filter="Applications (*.exe)")[0]
         if path:
-            result = re.search(r'.+/(?P<name>.+).exe', path)
+            result = search(r'.+/(?P<name>.+).exe', path)
             if result:
                 self.apps.append({'title': result.group('name'), 'path': path, 'total_time': {"hours": 0, "minutes": 0}})
-                self.addItem(result.group('name'))
+                item = QListWidgetItem(result.group('name'))
+                item.setFlags(item.flags() | Qt.ItemIsEditable)
+                self.addItem(item)
                 self.dump()
             else:
                 print("Illegal path!")
