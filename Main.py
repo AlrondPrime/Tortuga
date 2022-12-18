@@ -30,7 +30,7 @@ class threadLaunch(QRunnable):
         minutes = self.app['total_time']['minutes']
         minutes += session_time // 60
         if minutes >= 60:
-            hours = minutes // 60
+            hours += minutes // 60
             minutes %= 60
 
         self.app['total_time']['hours'] = hours
@@ -39,12 +39,11 @@ class threadLaunch(QRunnable):
 
 
 class ListWidget(QListWidget):
-    def __init__(self):
-        super(ListWidget, self).__init__()
+    def __init__(self, parent=None):
+        super(ListWidget, self).__init__(parent)
         self.apps=[]
         self.path = R"Tortuga.json"
         self.threadpool = QThreadPool()
-        # self.itemDoubleClicked.connect(self.sayHi)
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(self.itemChange)
 
@@ -55,31 +54,35 @@ class ListWidget(QListWidget):
             self.addItem(item)
         self.setMouseTracking(True)
 
-    # def sayHi(self, item):
-    #     print("hi")
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            self.removeGame(self.currentRow())
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
-    # def sayBye(self, item):
-    #     print("bye")
-
-    def done(self, title):
+    def gameClosed(self, title):
         self.dump()
         for i, item in enumerate(self.apps):
             if item['title'] == title:
                 self.item(i).setBackground( QColor(Qt.white) )
 
+    def removeGame(self, row:int):
+        t = self.takeItem(row)
+        del t
+        self.apps.pop(row)
+
     # Launch game with time tracking
     def launchGame(self, item):
         item.setBackground( QColor(Qt.green) )
-        i = self.row(item)
-        app = self.apps[i]
+        app = self.apps[ self.row(item) ]
         launcher = threadLaunch(app)
-        launcher.signals.done.connect(self.done)
+        launcher.signals.done.connect(self.gameClosed)
         self.threadpool.start(launcher) 
 
     def itemChange(self, item):
         i = self.row(item)
         self.apps[i]['title'] = item.text()
-        # return super().itemChanged(item)
 
     def addApp(self):
         path = QFileDialog.getOpenFileName(caption ="Select game to add", filter="Applications (*.exe)")[0]
@@ -110,7 +113,6 @@ class ListWidget(QListWidget):
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        # super(MainWindow, self).__init__()   
         QMainWindow.__init__(self)
         self.setWindowTitle("Tortuga")
 
@@ -154,7 +156,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.list.dump()
-        # self.showMinimized()
         event.accept()
 
     def exitEvent(self, event):
