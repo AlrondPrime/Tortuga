@@ -1,4 +1,4 @@
 {
-    "python.analysis.typeCheckingMode": "off",
-    "cmake.configureOnOpen": false
+  "python.analysis.typeCheckingMode": "off",
+  "cmake.configureOnOpen": false
 }

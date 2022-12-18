@@ -1,7 +1,9 @@
 import importlib.util
-import sys, os
+import os
+import sys
 
-def checkPackages(modules:list):
+
+def checkPackages(modules: list):
     for name in modules:
         if name in sys.modules:
             print(f"{name!r} already in sys.modules")
