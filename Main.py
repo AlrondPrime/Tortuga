@@ -1,8 +1,9 @@
-import os, sys, time, psutil, json
+from PackagesChecker import *
+import time, psutil, json
 from re import search
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import *
 
 class launcherSignals(QObject):
     done = pyqtSignal(object)
@@ -17,6 +18,9 @@ class threadLaunch(QRunnable):
         now = time.time()
         if os.path.exists(self.app['path']):
             result = search(r'(?P<name>.+)/.+.exe', self.app['path'])
+            if not result:
+                print("Error with path")
+                exit(-1)
             proc = psutil.Popen([], executable=self.app['path'], cwd = result.group('name'))
             name = proc.name()
             proc.wait()
@@ -37,10 +41,9 @@ class threadLaunch(QRunnable):
         self.app['total_time']['minutes'] = minutes
         self.signals.done.emit(self.app['title'])
 
-
 class ListWidget(QListWidget):
-    def __init__(self, parent=None):
-        super(ListWidget, self).__init__(parent)
+    def __init__(self):
+        super(ListWidget, self).__init__()
         self.apps=[]
         self.path = R"Tortuga.json"
         self.threadpool = QThreadPool()
@@ -54,12 +57,20 @@ class ListWidget(QListWidget):
             self.addItem(item)
         self.setMouseTracking(True)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
-            self.removeGame(self.currentRow())
-            event.accept()
+    def mouseDoubleClickEvent(self, e: QMouseEvent) -> None:
+        item = self.itemAt(e.pos())
+        if item:
+            self.launchGame(item)
+            e.accept()
         else:
-            super().keyPressEvent(event)
+            e.ignore()
+
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        if e.key() == Qt.Key_Delete:
+            self.removeGame(self.currentRow())
+            e.accept()
+
+        return super().keyPressEvent(e)
 
     def gameClosed(self, title):
         self.dump()
@@ -112,8 +123,8 @@ class ListWidget(QListWidget):
         return (self.apps[i]['total_time']['hours'], self.apps[i]['total_time']['minutes'])
 
 class MainWindow(QMainWindow):
-    def __init__(self):
-        QMainWindow.__init__(self)
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
         self.setWindowTitle("Tortuga")
 
         pixmap = getattr(QStyle, "SP_MediaPlay")
@@ -167,7 +178,7 @@ class MainWindow(QMainWindow):
         self.textField.setText(str(hours) + "h " + str(minutes) + "m")
 
 def main():
-    os.system("cls")
+    # os.system("cls")
     app = QApplication(sys.argv)
     window = MainWindow()
     
