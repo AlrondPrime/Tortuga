@@ -1,4 +1,7 @@
 {
   "python.analysis.typeCheckingMode": "off",
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none"
+  } 
 }

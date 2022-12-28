@@ -5,4 +5,5 @@ __pycache__/
 *.json
 *.code-workspace
 .idea/
+.vscode/
 CMakeLists.txt
