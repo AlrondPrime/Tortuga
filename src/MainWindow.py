@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QToolBar
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
+    QHBoxLayout, QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
 
 from ListWidget import ListWidget
 
@@ -8,7 +10,7 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self, parent)
         self.setWindowTitle("Tortuga")
 
-        pixmap = getattr(QStyle, "SP_MediaPlay")
+        pixmap = QStyle.SP_MediaPlay
         icon = self.style().standardIcon(pixmap)
         self.setWindowIcon(icon)
 
@@ -16,33 +18,48 @@ class MainWindow(QMainWindow):
         x = (desktop.width() - self.width() // 2) // 2
         y = (desktop.height() - self.height() // 2) // 2
         self.move(x, y)
+        self.setFixedSize(278, 285)  # TODO refactor later
 
         self.label = QLabel("Total time:")
 
         self.textField = QLabel()
 
-        hlayout = QHBoxLayout()
-        hlayout.addWidget(self.label)
-        hlayout.addWidget(self.textField)
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(self.label)
+        h_layout.addWidget(self.textField)
 
-        hcontainer = QWidget()
-        hcontainer.setLayout(hlayout)
+        h_container = QWidget()
+        h_container.setLayout(h_layout)
 
-        vlayout = QVBoxLayout()
+        v_layout = QVBoxLayout()
 
         self.list = ListWidget()
-        vlayout.addWidget(self.list)
-        vlayout.addWidget(hcontainer)
+        v_layout.addWidget(self.list)
+        v_layout.addWidget(h_container)
 
-        vcontainer = QWidget()
-        vcontainer.setLayout(vlayout)
+        v_container = QWidget()
+        v_container.setLayout(v_layout)
 
         toolbar = QToolBar()
         toolbar.setMovable(False)
         toolbar.addAction("Add app", self.list.addApp)
-        self.addToolBar(toolbar)
 
-        self.setCentralWidget(vcontainer)
+        hint_btn = QToolButton()
+        pixmap2 = QStyle.SP_TitleBarContextHelpButton
+        icon2 = self.style().standardIcon(pixmap2)
+        hint_btn.setIcon(icon2)
+        hint_btn.setDisabled(True)
+        hint_btn.setToolTip("Enter to launch\nDel to remove\nF2 to rename")
+
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.showMaximized()
+        toolbar.addWidget(splitter)
+
+        toolbar.addWidget(hint_btn)
+        toolbar.setIconSize(QSize(16, 16))
+
+        self.addToolBar(toolbar)
+        self.setCentralWidget(v_container)
 
         self.list.itemClicked.connect(self.updateTime)
         self.list.currentItemChanged.connect(self.updateTime)
@@ -50,7 +67,6 @@ class MainWindow(QMainWindow):
         self.list.signals.gameLaunched.connect(self.showMinimized)
 
     def closeEvent(self, event):
-        print("close")
         self.list.dump()
         event.accept()
 

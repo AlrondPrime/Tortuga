@@ -32,7 +32,6 @@ class ThreadLaunch(QRunnable):
             proc.wait()
             for proc2 in psutil.process_iter():
                 if proc2.name() == name:
-                    print("cringe!")
                     proc2.wait()
         now2 = time.time()
         session_time = int(now2 - now)
