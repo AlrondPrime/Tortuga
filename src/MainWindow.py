@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
     QHBoxLayout, QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
 
@@ -10,8 +11,9 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self, parent)
         self.setWindowTitle("Tortuga")
 
-        pixmap = QStyle.SP_MediaPlay
-        icon = self.style().standardIcon(pixmap)
+        # pixmap = QStyle.SP_MediaPlay
+        # icon = self.style().standardIcon(pixmap)
+        icon = QIcon("./resources/Shipwreck.ico")
         self.setWindowIcon(icon)
 
         desktop = QApplication.desktop()

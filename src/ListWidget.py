@@ -1,4 +1,6 @@
 import json
+import sys
+from pathlib import Path
 from re import search
 
 from PyQt5.QtCore import QThreadPool, Qt, QCoreApplication, QObject, pyqtSignal
@@ -17,6 +19,13 @@ class ListWidget(QListWidget):
     def __init__(self):
         super(ListWidget, self).__init__()
         self.apps = []
+        # if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        #     bundle_dir = Path(sys._MEIPASS)
+        # else:
+        #     bundle_dir = Path(__file__).parent
+        #
+        # self.path = Path.cwd() / bundle_dir / "Tortuga.json"
+        # self.path = Path(__file__).resolve().with_name("Tortuga.json")
         self.path = R"Tortuga.json"
         self.threadpool = QThreadPool()
         self.signals = ListSignals()
