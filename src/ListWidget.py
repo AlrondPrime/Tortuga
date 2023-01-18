@@ -1,24 +1,34 @@
 import json
 import sys
+from json import JSONDecodeError
 from pathlib import Path
 from re import search
 
-from PyQt5.QtCore import QThreadPool, Qt, QCoreApplication, QObject, pyqtSignal
+from PyQt5.QtCore import QThreadPool, Qt, QCoreApplication, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFileDialog
 
 from ThreadLaunch import ThreadLaunch
+from ListWidgetItem import ListWidgetItem
+from src.App import App
 
 
 class ListSignals(QObject):
-    gameLaunched = pyqtSignal(int)
+    gameLaunched = pyqtSignal()
     gameClosed = pyqtSignal(object)
+
+
+def getTime(item):
+    return item.getTime()
+
+
+def itemChange(item):
+    item.setTitle(item.text())
 
 
 class ListWidget(QListWidget):
     def __init__(self):
         super(ListWidget, self).__init__()
-        self.apps = []
         # if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         #     bundle_dir = Path(sys._MEIPASS)
         # else:
@@ -30,12 +40,14 @@ class ListWidget(QListWidget):
         self.threadpool = QThreadPool()
         self.signals = ListSignals()
         self.itemActivated.connect(self.launchGame)
-        self.itemChanged.connect(self.itemChange)
-        self.load()
-        for item in self.apps:
-            item = QListWidgetItem(item['title'])
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.itemChanged.connect(itemChange)
+
+        for item in self.load_json():
+            app = App(item)
+            item = ListWidgetItem(item['title'])
+            item.setApp(app)
             self.addItem(item)
+
         self.setMouseTracking(True)
 
     def mouseDoubleClickEvent(self, e: QMouseEvent) -> None:
@@ -53,26 +65,21 @@ class ListWidget(QListWidget):
 
         return super().keyPressEvent(e)
 
-    def gameClosed(self, title):
+    def gameClosed(self, title: str):
         self.dump()
-        for i, app in enumerate(self.apps):
-            if app['title'] == title:
-                self.setCurrentRow(i)
-                self.item(i).setBackground(QColor(Qt.white))
-                self.signals.gameClosed.emit(self.item(i))
+        for item in self.findItems(title, Qt.MatchRegExp):
+            item.setBackground(QColor(Qt.white))
+            self.signals.gameClosed.emit(item)
 
     def removeGame(self, row: int):
         self.takeItem(row)
-        self.apps.pop(row)
 
     def launchGame(self, item):
         item.setBackground(QColor(Qt.green))
-        app = self.apps[self.row(item)]
-        launcher = ThreadLaunch(app)
-        launcher.signals.done.connect(self.gameClosed)
-        launcher.signals.error.connect(self.errorLaunching)
-        self.threadpool.start(launcher)
-        self.signals.gameLaunched.emit(self.row(item))
+        item.launchGame()
+        item.signals.gameClosed.connect(self.gameClosed)
+
+        self.signals.gameLaunched.emit()
 
     def errorLaunching(self, code):
         print("An error occurred while launching game with error code ", code)
@@ -83,18 +90,15 @@ class ListWidget(QListWidget):
 
         QCoreApplication.exit(-1)
 
-    def itemChange(self, item):
-        i = self.row(item)
-        self.apps[i]['title'] = item.text()
-
     def addApp(self):
         path = QFileDialog.getOpenFileName(caption="Select game to add", filter="Applications (*.exe)")[0]
         if path:
             result = search(r'.+/(?P<name>.+).exe', path)
             if result:
-                self.apps.append(
+                app = App(
                     {'title': result.group('name'), 'path': path, 'total_time': {"hours": 0, "minutes": 0}})
-                item = QListWidgetItem(result.group('name'))
+                item = ListWidgetItem(result.group('name'))
+                item.setApp(app)
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.addItem(item)
                 self.dump()
@@ -104,14 +108,21 @@ class ListWidget(QListWidget):
         else:
             pass
 
+    def all_items(self):
+        for i in range(self.count()):
+            yield self.item(i)
+
     def dump(self):
         with open(self.path, "w") as file:
-            json.dump(self.apps, file)
+            data = []
+            for item in self.all_items():
+                data.append(item.toJSON())
 
-    def load(self):
-        with open(self.path, "r") as file:
-            self.apps = json.load(file)
+            json.dump(data, file)
 
-    def getTime(self, item):
-        i = self.row(item)
-        return self.apps[i]['total_time']['hours'], self.apps[i]['total_time']['minutes']
+    def load_json(self):
+        try:
+            with open(self.path, "r") as file:
+                return json.load(file)
+        except JSONDecodeError:
+            return []

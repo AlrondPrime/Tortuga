@@ -1,9 +1,10 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
     QHBoxLayout, QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
 
-from ListWidget import ListWidget
+from ListWidget import ListWidget, getTime
+from src.ListWidgetItem import ListWidgetItem
 
 
 class MainWindow(QMainWindow):
@@ -24,7 +25,7 @@ class MainWindow(QMainWindow):
 
         self.label = QLabel("Total time:")
 
-        self.textField = QLabel()
+        self.textField = QLabel("N/A")
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(self.label)
@@ -72,10 +73,11 @@ class MainWindow(QMainWindow):
         self.list.dump()
         event.accept()
 
-    def gameClosed(self, item):
+    def gameClosed(self, item: ListWidgetItem):
         self.updateTime(item)
         self.showNormal()
 
-    def updateTime(self, item):
-        (hours, minutes) = self.list.getTime(item)
-        self.textField.setText(str(hours) + "h " + str(minutes) + "m")
+    def updateTime(self, item: ListWidgetItem):
+        if item.isSelected():
+            (hours, minutes) = getTime(item)
+            self.textField.setText(str(hours) + "h " + str(minutes) + "m")
