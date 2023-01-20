@@ -18,7 +18,7 @@ class ThreadLaunch(QRunnable):
         self.signals = LauncherSignals()
 
     def run(self):
-        now = time.time()
+        # now = time.time()
         if os.path.exists(self.app.path):
             result = search(r'(?P<name>.+)/.+.exe', self.app.path)
 
@@ -33,15 +33,15 @@ class ThreadLaunch(QRunnable):
             for proc2 in psutil.process_iter():
                 if proc2.name() == name:
                     proc2.wait()
-        now2 = time.time()
-        session_time = int(now2 - now)
-        hours = self.app.hours
-        minutes = self.app.minutes
-        minutes += session_time // 60
-        if minutes >= 60:
-            hours += minutes // 60
-            minutes %= 60
+        # now2 = time.time()
+        # session_time = int(now2 - now)
+        # hours = self.app.hours
+        # minutes = self.app.minutes
+        # minutes += session_time // 60
+        # if minutes >= 60:
+        #     hours += minutes // 60
+        #     minutes %= 60
 
-        self.app.hours = hours
-        self.app.minutes = minutes
+        # self.app.hours = hours
+        # self.app.minutes = minutes
         self.signals.done.emit(self.app.title)

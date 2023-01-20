@@ -8,6 +8,9 @@ class App:
             self.hours = 0
             self.minutes = 0
 
+        self.current_hours = 0
+        self.current_minutes = 0
+
     def toJSON(self):
         return {
                 "title": self.title,

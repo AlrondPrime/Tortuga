@@ -1,25 +1,23 @@
-import json
 import sys
-from json import JSONDecodeError
+import os.path
 from pathlib import Path
+import shutil
+import json
+from json import JSONDecodeError
 from re import search
 
 from PyQt5.QtCore import QThreadPool, Qt, QCoreApplication, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFileDialog
+from PyQt5.QtWidgets import QListWidget, QFileDialog
 
-from ThreadLaunch import ThreadLaunch
 from ListWidgetItem import ListWidgetItem
-from src.App import App
+from App import App
 
 
 class ListSignals(QObject):
     gameLaunched = pyqtSignal()
-    gameClosed = pyqtSignal(object)
-
-
-def getTime(item):
-    return item.getTime()
+    gameClosed = pyqtSignal()
+    updateTime = pyqtSignal(object)
 
 
 def itemChange(item):
@@ -27,8 +25,9 @@ def itemChange(item):
 
 
 class ListWidget(QListWidget):
-    def __init__(self):
-        super(ListWidget, self).__init__()
+    def __init__(self, parent: "MainWindow" = None):
+        super(ListWidget, self).__init__(parent)
+        self._parent = parent
         # if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         #     bundle_dir = Path(sys._MEIPASS)
         # else:
@@ -36,16 +35,18 @@ class ListWidget(QListWidget):
         #
         # self.path = Path.cwd() / bundle_dir / "Tortuga.json"
         # self.path = Path(__file__).resolve().with_name("Tortuga.json")
-        self.path = R"Tortuga.json"
+        self.path = R"./data/Tortuga.json"
+        self.backup_path = R"./data/Tortuga-backup.json"
         self.threadpool = QThreadPool()
         self.signals = ListSignals()
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(itemChange)
 
-        for item in self.load_json():
+        for item in self.load():
             app = App(item)
-            item = ListWidgetItem(item['title'])
+            item = ListWidgetItem(item['title'], self)
             item.setApp(app)
+            item.signals.updateTime.connect(self.updateTime)
             self.addItem(item)
 
         self.setMouseTracking(True)
@@ -69,19 +70,19 @@ class ListWidget(QListWidget):
         self.dump()
         for item in self.findItems(title, Qt.MatchRegExp):
             item.setBackground(QColor(Qt.white))
-            self.signals.gameClosed.emit(item)
+            self.signals.gameClosed.emit()
 
     def removeGame(self, row: int):
         self.takeItem(row)
 
-    def launchGame(self, item):
+    def launchGame(self, item: ListWidgetItem):
         item.setBackground(QColor(Qt.green))
         item.launchGame()
         item.signals.gameClosed.connect(self.gameClosed)
 
         self.signals.gameLaunched.emit()
 
-    def errorLaunching(self, code):
+    def errorLaunching(self, code: int):
         print("An error occurred while launching game with error code ", code)
         self.threadpool.clear()
         for i in range(self.count()):
@@ -97,7 +98,7 @@ class ListWidget(QListWidget):
             if result:
                 app = App(
                     {'title': result.group('name'), 'path': path, 'total_time': {"hours": 0, "minutes": 0}})
-                item = ListWidgetItem(result.group('name'))
+                item = ListWidgetItem(result.group('name'), self)
                 item.setApp(app)
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.addItem(item)
@@ -120,9 +121,29 @@ class ListWidget(QListWidget):
 
             json.dump(data, file)
 
-    def load_json(self):
+    def load(self):
+        if not os.path.exists(self.path):
+            os.makedirs("./data", exist_ok=True)
+            with open(self.path, "w") as file:
+                file.write("[]")
+
+        if not os.path.exists(self.backup_path):
+            with open(self.backup_path, "w") as file:
+                file.write("[]")
+
+        self.backup_data()
+
         try:
             with open(self.path, "r") as file:
                 return json.load(file)
         except JSONDecodeError:
             return []
+
+    def backup_data(self):
+        shutil.copy(self.path, self.backup_path)
+
+    def restore_data(self):
+        shutil.copy(self.backup_path, self.path)
+
+    def updateTime(self, item: ListWidgetItem):
+        self._parent.updateTime(item)

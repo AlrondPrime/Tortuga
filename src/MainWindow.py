@@ -1,10 +1,10 @@
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
-    QHBoxLayout, QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
+    QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter, QFormLayout
 
-from ListWidget import ListWidget, getTime
-from src.ListWidgetItem import ListWidgetItem
+from ListWidget import ListWidget
+from ListWidgetItem import ListWidgetItem
 
 
 class MainWindow(QMainWindow):
@@ -23,22 +23,18 @@ class MainWindow(QMainWindow):
         self.move(x, y)
         self.setFixedSize(278, 285)  # TODO refactor later
 
-        self.label = QLabel("Total time:")
+        self.current_time_label = QLabel("N/A")
+        self.total_time_label = QLabel("N/A")
 
-        self.textField = QLabel("N/A")
+        time_layout = QFormLayout()
+        time_layout.addRow("Current session time:", self.current_time_label)
+        time_layout.addRow("Total played time:", self.total_time_label)
 
-        h_layout = QHBoxLayout()
-        h_layout.addWidget(self.label)
-        h_layout.addWidget(self.textField)
-
-        h_container = QWidget()
-        h_container.setLayout(h_layout)
-
+        self.list = ListWidget(self)
+        self.list.setParent(self)
         v_layout = QVBoxLayout()
-
-        self.list = ListWidget()
         v_layout.addWidget(self.list)
-        v_layout.addWidget(h_container)
+        v_layout.addLayout(time_layout)
 
         v_container = QWidget()
         v_container.setLayout(v_layout)
@@ -66,6 +62,7 @@ class MainWindow(QMainWindow):
 
         self.list.itemClicked.connect(self.updateTime)
         self.list.currentItemChanged.connect(self.updateTime)
+        self.list.signals.updateTime.connect(self.updateTime)
         self.list.signals.gameClosed.connect(self.gameClosed)
         self.list.signals.gameLaunched.connect(self.showMinimized)
 
@@ -73,11 +70,12 @@ class MainWindow(QMainWindow):
         self.list.dump()
         event.accept()
 
-    def gameClosed(self, item: ListWidgetItem):
-        self.updateTime(item)
+    def gameClosed(self):
         self.showNormal()
 
     def updateTime(self, item: ListWidgetItem):
         if item.isSelected():
-            (hours, minutes) = getTime(item)
-            self.textField.setText(str(hours) + "h " + str(minutes) + "m")
+            (hours, minutes) = item.currentTime()
+            self.current_time_label.setText(str(hours) + "h " + str(minutes) + "m")
+            (hours, minutes) = item.totalTime()
+            self.total_time_label.setText(str(hours) + "h " + str(minutes) + "m")
