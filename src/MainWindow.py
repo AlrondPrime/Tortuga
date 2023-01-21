@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSlot
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
     QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter, QFormLayout
@@ -11,11 +11,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setWindowTitle("Tortuga")
-
-        # pixmap = QStyle.SP_MediaPlay
-        # icon = self.style().standardIcon(pixmap)
-        icon = QIcon("./resources/Shipwreck.ico")
-        self.setWindowIcon(icon)
+        self.setWindowIcon(QIcon("./resources/Shipwreck.ico"))
 
         desktop = QApplication.desktop()
         x = (desktop.width() - self.width() // 2) // 2
@@ -30,14 +26,14 @@ class MainWindow(QMainWindow):
         time_layout.addRow("Current session time:", self.current_time_label)
         time_layout.addRow("Total played time:", self.total_time_label)
 
-        self.list = ListWidget(self)
-        self.list.setParent(self)
+        self.list = ListWidget()
+
         v_layout = QVBoxLayout()
         v_layout.addWidget(self.list)
         v_layout.addLayout(time_layout)
 
-        v_container = QWidget()
-        v_container.setLayout(v_layout)
+        central_widget = QWidget()
+        central_widget.setLayout(v_layout)
 
         toolbar = QToolBar()
         toolbar.setMovable(False)
@@ -58,20 +54,17 @@ class MainWindow(QMainWindow):
         toolbar.setIconSize(QSize(16, 16))
 
         self.addToolBar(toolbar)
-        self.setCentralWidget(v_container)
+        self.setCentralWidget(central_widget)
 
         self.list.itemClicked.connect(self.updateTime)
         self.list.currentItemChanged.connect(self.updateTime)
         self.list.signals.updateTime.connect(self.updateTime)
-        self.list.signals.gameClosed.connect(self.gameClosed)
+        self.list.signals.gameClosed.connect(self.showNormal)
         self.list.signals.gameLaunched.connect(self.showMinimized)
 
     def closeEvent(self, event):
         self.list.dump()
         event.accept()
-
-    def gameClosed(self):
-        self.showNormal()
 
     def updateTime(self, item: ListWidgetItem):
         if item.isSelected():

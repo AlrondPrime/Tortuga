@@ -6,7 +6,7 @@ import json
 from json import JSONDecodeError
 from re import search
 
-from PyQt5.QtCore import QThreadPool, Qt, QCoreApplication, QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
 from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor
 from PyQt5.QtWidgets import QListWidget, QFileDialog
 
@@ -25,9 +25,8 @@ def itemChange(item):
 
 
 class ListWidget(QListWidget):
-    def __init__(self, parent: "MainWindow" = None):
-        super(ListWidget, self).__init__(parent)
-        self._parent = parent
+    def __init__(self):
+        super(ListWidget, self).__init__()
         # if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         #     bundle_dir = Path(sys._MEIPASS)
         # else:
@@ -37,16 +36,15 @@ class ListWidget(QListWidget):
         # self.path = Path(__file__).resolve().with_name("Tortuga.json")
         self.path = R"./data/Tortuga.json"
         self.backup_path = R"./data/Tortuga-backup.json"
-        self.threadpool = QThreadPool()
         self.signals = ListSignals()
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(itemChange)
 
         for item in self.load():
             app = App(item)
-            item = ListWidgetItem(item['title'], self)
+            item = ListWidgetItem(item['title'])
             item.setApp(app)
-            item.signals.updateTime.connect(self.updateTime)
+            item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
 
         self.setMouseTracking(True)
@@ -66,17 +64,14 @@ class ListWidget(QListWidget):
 
         return super().keyPressEvent(e)
 
-    def gameClosed(self, title: str):
+    def gameClosed(self):
         self.dump()
-        for item in self.findItems(title, Qt.MatchRegExp):
-            item.setBackground(QColor(Qt.white))
-            self.signals.gameClosed.emit()
+        self.signals.gameClosed.emit()
 
     def removeGame(self, row: int):
         self.takeItem(row)
 
     def launchGame(self, item: ListWidgetItem):
-        item.setBackground(QColor(Qt.green))
         item.launchGame()
         item.signals.gameClosed.connect(self.gameClosed)
 
@@ -84,7 +79,7 @@ class ListWidget(QListWidget):
 
     def errorLaunching(self, code: int):
         print("An error occurred while launching game with error code ", code)
-        self.threadpool.clear()
+
         for i in range(self.count()):
             item = self.item(i)
             item.setBackground(QColor(Qt.white))
@@ -94,13 +89,19 @@ class ListWidget(QListWidget):
     def addApp(self):
         path = QFileDialog.getOpenFileName(caption="Select game to add", filter="Applications (*.exe)")[0]
         if path:
-            result = search(r'.+/(?P<name>.+).exe', path)
+            result = search('.+/(?P<name>.+).exe', path)
             if result:
                 app = App(
-                    {'title': result.group('name'), 'path': path, 'total_time': {"hours": 0, "minutes": 0}})
-                item = ListWidgetItem(result.group('name'), self)
+                    {'title': result.group('name'),
+                     'path': path,
+                     'total_time':
+                         {"hours": 0,
+                          "minutes": 0
+                          }
+                     })
+                item = ListWidgetItem(result.group('name'))
+                item.signals.updateTime.connect(self.signals.updateTime)
                 item.setApp(app)
-                item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.addItem(item)
                 self.dump()
             else:
@@ -109,7 +110,7 @@ class ListWidget(QListWidget):
         else:
             pass
 
-    def all_items(self):
+    def all_items(self) -> list[ListWidgetItem]:
         for i in range(self.count()):
             yield self.item(i)
 
@@ -131,7 +132,10 @@ class ListWidget(QListWidget):
             with open(self.backup_path, "w") as file:
                 file.write("[]")
 
-        self.backup_data()
+        if os.path.getmtime(self.path) > os.path.getmtime(self.backup_path):
+            self.backup_data()
+        elif os.path.getmtime(self.path) < os.path.getmtime(self.backup_path):
+            self.restore_data()
 
         try:
             with open(self.path, "r") as file:
@@ -144,6 +148,3 @@ class ListWidget(QListWidget):
 
     def restore_data(self):
         shutil.copy(self.backup_path, self.path)
-
-    def updateTime(self, item: ListWidgetItem):
-        self._parent.updateTime(item)

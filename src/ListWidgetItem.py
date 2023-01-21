@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QObject, pyqtSignal, QThreadPool, pyqtSlot, QTimer
+from PyQt5.QtCore import Qt, QObject, pyqtSignal, QThreadPool, QTimer
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -7,15 +7,16 @@ from ThreadLaunch import ThreadLaunch
 
 
 class ListWidgetItemSignals(QObject):
-    gameClosed = pyqtSignal(object)
+    gameClosed = pyqtSignal()
     errorLaunching = pyqtSignal(int)
     updateTime = pyqtSignal(object)
 
 
 class ListWidgetItem(QListWidgetItem):
-    def __init__(self, text: str = "", parent: "ListWidget" = None):
-        super(ListWidgetItem, self).__init__(text, parent)
-        self._parent = parent
+    def __init__(self, text: str = ""):
+        super(ListWidgetItem, self).__init__()
+        self.launcher = None
+        self.setText(text)
         self._app = App()
         self.signals = ListWidgetItemSignals()
         self.setFlags(self.flags() | Qt.ItemIsEditable)
@@ -56,7 +57,7 @@ class ListWidgetItem(QListWidgetItem):
             self._app.hours += 1
 
         if self.isSelected():
-            self._parent.updateTime(self)
+            self.signals.updateTime.emit(self)
 
     def getApp(self):
         return self._app
@@ -66,15 +67,19 @@ class ListWidgetItem(QListWidgetItem):
 
     def launchGame(self):
         self.setBackground(QColor(Qt.green))
-        self.timer.start()
-        launcher = ThreadLaunch(self._app)
-        QThreadPool.globalInstance().start(launcher)
-        launcher.signals.done.connect(self.gameClosed)
-        launcher.signals.error.connect(self.errorLaunching)
 
-    def gameClosed(self, title: str):
+        self.launcher = ThreadLaunch(self._app)
+        QThreadPool.globalInstance().start(self.launcher)
+        self.launcher.signals.gameClosed.connect(self.gameClosed)
+        self.launcher.signals.error.connect(self.errorLaunching)
+
+        self.timer.start()
+
+    def gameClosed(self):
+        self.setBackground(QColor(Qt.white))
         self.timer.stop()
-        self.signals.gameClosed.emit(title)
+
+        self.signals.gameClosed.emit()
 
     def errorLaunching(self, code: int):
         self.signals.errorLaunching.emit(code)

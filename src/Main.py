@@ -9,7 +9,6 @@ def except_hook(cls, exception, traceback):
 
 
 def main():
-    # os.system("cls")
     sys.excepthook = except_hook
     app = QApplication(sys.argv)
     window = MainWindow()
