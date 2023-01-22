@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from re import search
 
 from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
-from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor
+from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent
 from PyQt5.QtWidgets import QListWidget, QFileDialog
 
 from ListWidgetItem import ListWidgetItem
@@ -34,11 +34,13 @@ class ListWidget(QListWidget):
         #
         # self.path = Path.cwd() / bundle_dir / "Tortuga.json"
         # self.path = Path(__file__).resolve().with_name("Tortuga.json")
-        self.path = R"./data/Tortuga.json"
-        self.backup_path = R"./data/Tortuga-backup.json"
+        self._path = R"./data/Tortuga.json"
+        self._backup_path = R"./data/Tortuga-backup.json"
         self.signals = ListSignals()
+
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(itemChange)
+        self.setMouseTracking(True)
 
         for item in self.load():
             app = App(item)
@@ -46,8 +48,6 @@ class ListWidget(QListWidget):
             item.setApp(app)
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
-
-        self.setMouseTracking(True)
 
     def mouseDoubleClickEvent(self, e: QMouseEvent) -> None:
         item = self.itemAt(e.pos())
@@ -115,7 +115,7 @@ class ListWidget(QListWidget):
             yield self.item(i)
 
     def dump(self):
-        with open(self.path, "w") as file:
+        with open(self._path, "w") as file:
             data = []
             for item in self.all_items():
                 data.append(item.toJSON())
@@ -123,28 +123,35 @@ class ListWidget(QListWidget):
             json.dump(data, file)
 
     def load(self):
-        if not os.path.exists(self.path):
+        if not os.path.exists(self._path):
             os.makedirs("./data", exist_ok=True)
-            with open(self.path, "w") as file:
+            with open(self._path, "w") as file:
                 file.write("[]")
 
-        if not os.path.exists(self.backup_path):
-            with open(self.backup_path, "w") as file:
+        if not os.path.exists(self._backup_path):
+            with open(self._backup_path, "w") as file:
                 file.write("[]")
 
-        if os.path.getmtime(self.path) > os.path.getmtime(self.backup_path):
+        if os.path.getmtime(self._path) > os.path.getmtime(self._backup_path):
             self.backup_data()
-        elif os.path.getmtime(self.path) < os.path.getmtime(self.backup_path):
+        elif os.path.getmtime(self._path) < os.path.getmtime(self._backup_path):
             self.restore_data()
 
         try:
-            with open(self.path, "r") as file:
+            with open(self._path, "r") as file:
                 return json.load(file)
         except JSONDecodeError:
             return []
 
     def backup_data(self):
-        shutil.copy(self.path, self.backup_path)
+        shutil.copy(self._path, self._backup_path)
 
     def restore_data(self):
-        shutil.copy(self.backup_path, self.path)
+        shutil.copy(self._backup_path, self._path)
+
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
+        item = self.itemAt(event.pos())
+        self.signals.updateTime.emit(item)
+
+        if item:
+            item.context_menu.exec_(self.mapToGlobal(event.pos()))

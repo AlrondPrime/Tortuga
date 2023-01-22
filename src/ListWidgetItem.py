@@ -1,9 +1,10 @@
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QThreadPool, QTimer
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem, QMenu
 
 from App import App
 from ThreadLaunch import ThreadLaunch
+from AppEditForm import AppEditForm
 
 
 class ListWidgetItemSignals(QObject):
@@ -15,14 +16,21 @@ class ListWidgetItemSignals(QObject):
 class ListWidgetItem(QListWidgetItem):
     def __init__(self, text: str = ""):
         super(ListWidgetItem, self).__init__()
-        self.launcher = None
+        self.setFlags(self.flags() | Qt.ItemIsEditable)
+        self.signals = ListWidgetItemSignals()
+        self._launcher = None
         self.setText(text)
         self._app = App()
-        self.signals = ListWidgetItemSignals()
-        self.setFlags(self.flags() | Qt.ItemIsEditable)
-        self.timer = QTimer()
-        self.timer.setInterval(60000)
-        self.timer.timeout.connect(self.increaseTime)
+        self._timer = QTimer()
+        self._timer.setInterval(60_000)  # 1 minute
+
+        self.edit_form = AppEditForm()
+
+        self._timer.timeout.connect(self.increaseTime)
+        self.edit_form.dataEdited.connect(self.updateData)
+
+        self.context_menu = QMenu()
+        self.context_menu.addAction("Edit", self.showEditForm)
 
     def toJSON(self):
         return self._app.toJSON()
@@ -68,18 +76,37 @@ class ListWidgetItem(QListWidgetItem):
     def launchGame(self):
         self.setBackground(QColor(Qt.green))
 
-        self.launcher = ThreadLaunch(self._app)
-        QThreadPool.globalInstance().start(self.launcher)
-        self.launcher.signals.gameClosed.connect(self.gameClosed)
-        self.launcher.signals.error.connect(self.errorLaunching)
+        self._launcher = ThreadLaunch(self._app)
+        QThreadPool.globalInstance().start(self._launcher)
+        self._launcher.signals.gameClosed.connect(self.gameClosed)
+        self._launcher.signals.error.connect(self.errorLaunching)
 
-        self.timer.start()
+        self._timer.start()
 
     def gameClosed(self):
         self.setBackground(QColor(Qt.white))
-        self.timer.stop()
+        self._timer.stop()
 
         self.signals.gameClosed.emit()
 
     def errorLaunching(self, code: int):
         self.signals.errorLaunching.emit(code)
+
+    def updateData(self, app_json: dict):
+        self.edit_form.title_field.clear()
+        self.edit_form.path_field.clear()
+
+        title = app_json['title']
+        path = app_json['path']
+
+        if title != "":
+            self._app.title = title
+            self.setText(title)
+
+        if path != "":
+            self._app.path = path
+
+    def showEditForm(self):
+        self.edit_form.title_field.setPlaceholderText(self._app.title)
+        self.edit_form.path_field.setPlaceholderText(self._app.path)
+        self.edit_form.show()

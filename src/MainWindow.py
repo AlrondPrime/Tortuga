@@ -5,13 +5,15 @@ from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
 
 from ListWidget import ListWidget
 from ListWidgetItem import ListWidgetItem
+from SystemTrayIcon import SystemTrayIcon
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
-        QMainWindow.__init__(self, parent)
+    def __init__(self):
+        super().__init__()
         self.setWindowTitle("Tortuga")
         self.setWindowIcon(QIcon("./resources/Shipwreck.ico"))
+        self.tray_icon = SystemTrayIcon()
 
         desktop = QApplication.desktop()
         x = (desktop.width() - self.width() // 2) // 2
@@ -61,10 +63,20 @@ class MainWindow(QMainWindow):
         self.list.signals.updateTime.connect(self.updateTime)
         self.list.signals.gameClosed.connect(self.showNormal)
         self.list.signals.gameLaunched.connect(self.showMinimized)
+        self.tray_icon.showWindow.connect(self.show)
+        self.tray_icon.closeWindow.connect(self.exit)
+
+    def exit(self):
+        self.list.dump()
+        self.tray_icon.hide()
+        self.close()
+
+        QApplication.exit(0)
 
     def closeEvent(self, event):
-        self.list.dump()
-        event.accept()
+        self.hide()
+
+        event.ignore()
 
     def updateTime(self, item: ListWidgetItem):
         if item.isSelected():
