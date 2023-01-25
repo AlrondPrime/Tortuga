@@ -13,34 +13,24 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Tortuga")
         self.setWindowIcon(QIcon("./resources/Shipwreck.ico"))
-        self.tray_icon = SystemTrayIcon()
-
         desktop = QApplication.desktop()
         x = (desktop.width() - self.width() // 2) // 2
         y = (desktop.height() - self.height() // 2) // 2
         self.move(x, y)
-        self.setFixedSize(278, 285)  # TODO refactor later
+        self.setFixedSize(278, 285)
 
+        self.tray_icon = SystemTrayIcon()
+
+        self.list = ListWidget()
+
+        # Time layout
         self.current_time_label = QLabel("N/A")
         self.total_time_label = QLabel("N/A")
-
         time_layout = QFormLayout()
         time_layout.addRow("Current session time:", self.current_time_label)
         time_layout.addRow("Total played time:", self.total_time_label)
 
-        self.list = ListWidget()
-
-        v_layout = QVBoxLayout()
-        v_layout.addWidget(self.list)
-        v_layout.addLayout(time_layout)
-
-        central_widget = QWidget()
-        central_widget.setLayout(v_layout)
-
-        toolbar = QToolBar()
-        toolbar.setMovable(False)
-        toolbar.addAction("Add app", self.list.addApp)
-
+        # Toolbar
         hint_btn = QToolButton()
         pixmap2 = QStyle.SP_TitleBarContextHelpButton
         icon2 = self.style().standardIcon(pixmap2)
@@ -50,35 +40,44 @@ class MainWindow(QMainWindow):
 
         splitter = QSplitter(Qt.Horizontal)
         splitter.showMaximized()
-        toolbar.addWidget(splitter)
 
+        toolbar = QToolBar()
+        toolbar.setMovable(False)
+        toolbar.addAction("Add app", self.list.addApp)
+        toolbar.addWidget(splitter)
         toolbar.addWidget(hint_btn)
         toolbar.setIconSize(QSize(16, 16))
-
         self.addToolBar(toolbar)
+
+        # Central widget
+        v_layout = QVBoxLayout()
+        v_layout.addWidget(self.list)
+        v_layout.addLayout(time_layout)
+        central_widget = QWidget()
+        central_widget.setLayout(v_layout)
         self.setCentralWidget(central_widget)
 
         self.list.itemClicked.connect(self.updateTime)
         self.list.currentItemChanged.connect(self.updateTime)
         self.list.signals.updateTime.connect(self.updateTime)
         self.list.signals.gameClosed.connect(self.showNormal)
-        self.list.signals.gameLaunched.connect(self.showMinimized)
-        self.tray_icon.showWindow.connect(self.show)
-        self.tray_icon.closeWindow.connect(self.exit)
+        self.list.signals.gameLaunched.connect(self.hide)
+        self.tray_icon.signals.showWindow.connect(self.showNormal)
+        self.tray_icon.signals.closeWindow.connect(self.exit)
+        self.tray_icon.activated.connect(self.tray_icon.activateEvent)
 
-    def exit(self):
-        self.list.dump()
+    def exit(self) -> None:
         self.tray_icon.hide()
+        self.list.dump()
         self.close()
-
         QApplication.exit(0)
 
-    def closeEvent(self, event):
+    # override
+    def closeEvent(self, event) -> None:
         self.hide()
-
         event.ignore()
 
-    def updateTime(self, item: ListWidgetItem):
+    def updateTime(self, item: ListWidgetItem) -> None:
         if item.isSelected():
             (hours, minutes) = item.currentTime()
             self.current_time_label.setText(str(hours) + "h " + str(minutes) + "m")

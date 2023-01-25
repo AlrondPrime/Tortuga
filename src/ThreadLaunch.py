@@ -5,17 +5,18 @@ import psutil
 from PyQt5.QtCore import QRunnable, QObject, pyqtSignal
 
 
-class LauncherSignals(QObject):
+class _LauncherSignals(QObject):
     gameClosed = pyqtSignal()
     error = pyqtSignal(int)
 
 
 class ThreadLaunch(QRunnable):
     def __init__(self, app):
-        super(QRunnable, self).__init__()
+        super().__init__()
         self._app = app
-        self.signals = LauncherSignals()
+        self.signals = _LauncherSignals()
 
+    # override
     def run(self):
         if os.path.exists(self._app.path):
             result = search(r'(?P<name>.+)/.+.exe', self._app.path)
