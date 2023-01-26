@@ -66,6 +66,7 @@ class ListWidgetItem(QListWidgetItem):
 
     def setApp(self, app: App):
         self._app = app
+        self.setText(self._app.title)
         self.setIcon()
 
     def launchGame(self) -> None:

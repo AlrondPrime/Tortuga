@@ -35,7 +35,7 @@ class ListWidget(QListWidget):
 
         for item in self.load():
             app = App(item)
-            item = ListWidgetItem(item['title'])
+            item = ListWidgetItem()
             item.setApp(app)
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
