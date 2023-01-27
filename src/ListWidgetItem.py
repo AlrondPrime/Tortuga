@@ -32,8 +32,9 @@ class ListWidgetItem(QListWidgetItem):
         self._timer.timeout.connect(self.increaseTime)
         self._edit_form.signals.dataEdited.connect(self.updateData)
 
-        self._context_menu = QMenu()
-        self._context_menu.addAction("Edit", self.showEditForm)
+        self.context_menu = QMenu()
+        self.context_menu.addAction("Edit", self.showEditForm)
+        self.setTextAlignment(Qt.AlignCenter)
 
     def toJSON(self):
         return self._app.toJSON()
@@ -107,6 +108,7 @@ class ListWidgetItem(QListWidgetItem):
         self._edit_form.path_field.setPlaceholderText(self._app.path)
         self._edit_form.show()
 
+    # override
     def setIcon(self):
         if os.path.exists(self._app.path):
             icons = win32gui.ExtractIconEx(self._app.path, 0, 10)

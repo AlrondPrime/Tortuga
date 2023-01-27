@@ -1,11 +1,12 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, QLabel, \
-    QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter, QFormLayout
+from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, \
+    QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
 
 from ListWidget import ListWidget
 from ListWidgetItem import ListWidgetItem
 from SystemTrayIcon import SystemTrayIcon
+from TimeDisplay import TimeDisplay
 
 
 class MainWindow(QMainWindow):
@@ -23,12 +24,7 @@ class MainWindow(QMainWindow):
 
         self.list = ListWidget()
 
-        # Time layout
-        self.current_time_label = QLabel("N/A")
-        self.total_time_label = QLabel("N/A")
-        time_layout = QFormLayout()
-        time_layout.addRow("Current session time:", self.current_time_label)
-        time_layout.addRow("Total played time:", self.total_time_label)
+        self.time_display = TimeDisplay()
 
         # Toolbar
         hint_btn = QToolButton()
@@ -52,7 +48,7 @@ class MainWindow(QMainWindow):
         # Central widget
         v_layout = QVBoxLayout()
         v_layout.addWidget(self.list)
-        v_layout.addLayout(time_layout)
+        v_layout.addWidget(self.time_display)
         central_widget = QWidget()
         central_widget.setLayout(v_layout)
         self.setCentralWidget(central_widget)
@@ -80,6 +76,6 @@ class MainWindow(QMainWindow):
     def updateTime(self, item: ListWidgetItem) -> None:
         if item.isSelected():
             (hours, minutes) = item.currentTime()
-            self.current_time_label.setText(str(hours) + "h " + str(minutes) + "m")
+            self.time_display.current_time_label.setText(str(hours) + "h " + str(minutes) + "m")
             (hours, minutes) = item.totalTime()
-            self.total_time_label.setText(str(hours) + "h " + str(minutes) + "m")
+            self.time_display.total_time_label.setText(str(hours) + "h " + str(minutes) + "m")

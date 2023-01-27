@@ -1,11 +1,10 @@
 import os.path
 import shutil
 import json
-from json import JSONDecodeError
 from re import search
 
-from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
-from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent
+from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal, QRect, QEvent
+from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent, QPaintEvent, QPainter, QBrush, QPen
 from PyQt5.QtWidgets import QListWidget, QFileDialog
 
 from ListWidgetItem import ListWidgetItem
@@ -27,6 +26,7 @@ class ListWidget(QListWidget):
         super(ListWidget, self).__init__()
         self._path = R"./data/Tortuga.json"
         self._backup_path = R"./data/Tortuga-backup.json"
+        self.radius = 10
         self.signals = _ListSignals()
 
         self.itemActivated.connect(self.launchGame)
@@ -39,6 +39,9 @@ class ListWidget(QListWidget):
             item.setApp(app)
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
+
+        self.setStyleSheet("border: 0px; background-color: rgb(240, 240, 240)")
+        self.viewport().installEventFilter(self)
 
     # override
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -142,13 +145,24 @@ class ListWidget(QListWidget):
         try:
             with open(self._path, "r") as file:
                 return json.load(file)
-        except JSONDecodeError:
+        except json.JSONDecodeError:
             return []
 
     def backup_data(self) -> None:
-        pass
         shutil.copy(self._path, self._backup_path)
 
     def restore_data(self) -> None:
         pass
         shutil.copy(self._backup_path, self._path)
+
+    # override
+    def eventFilter(self, object: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Paint and object is self.viewport():
+            painter = QPainter()
+            painter.begin(object)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setPen(QPen(Qt.black, 1, Qt.SolidLine, Qt.RoundCap))
+            painter.drawRoundedRect(0, 0, self.width(), self.height(), self.radius, self.radius)
+            painter.end()
+
+        return super().eventFilter(object, event)
