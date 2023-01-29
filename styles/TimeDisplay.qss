@@ -1,0 +1,14 @@
+* {font-family: "Cascadia Mono";}
+
+TimeDisplay {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 10px;
+
+    background-color: #2b2b2b;
+}
+
+QLabel {
+    color: white;
+}
+

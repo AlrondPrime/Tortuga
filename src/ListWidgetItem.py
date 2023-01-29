@@ -2,13 +2,13 @@ import os.path
 
 import win32gui
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QThreadPool, QTimer
-from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidgetItem, QMenu, QStyle, QApplication
 from PyQt5.QtWinExtras import QtWin
 
 from App import App
-from ThreadLaunch import ThreadLaunch
 from AppEditForm import AppEditForm
+from ThreadLaunch import ThreadLaunch
 
 
 class _ListWidgetItemSignals(QObject):
@@ -29,11 +29,11 @@ class ListWidgetItem(QListWidgetItem):
 
         self._edit_form = AppEditForm()
 
-        self._timer.timeout.connect(self.increaseTime)
-        self._edit_form.signals.dataEdited.connect(self.updateData)
+        self._timer.timeout.connect(self._increaseTime)
+        self._edit_form.signals.dataEdited.connect(self._updateData)
 
         self.context_menu = QMenu()
-        self.context_menu.addAction("Edit", self.showEditForm)
+        self.context_menu.addAction("Edit", self._showEditForm)
         self.setTextAlignment(Qt.AlignCenter)
 
     def toJSON(self):
@@ -51,7 +51,7 @@ class ListWidgetItem(QListWidgetItem):
     def currentTime(self):
         return self._app.current_hours, self._app.current_minutes
 
-    def increaseTime(self) -> None:
+    def _increaseTime(self) -> None:
         self._app.current_minutes += 1
         if self._app.current_minutes == 60:
             self._app.current_minutes = 0
@@ -68,20 +68,22 @@ class ListWidgetItem(QListWidgetItem):
     def setApp(self, app: App):
         self._app = app
         self.setText(self._app.title)
-        self.setIcon()
+        self._updateIcon()
 
     def launchGame(self) -> None:
-        self.setBackground(QColor(Qt.green))
-
+        # self.setBackground(QColor(Qt.green))
+        self._app.current_hours = 0
+        self._app.current_minutes = 0
         self._launcher = ThreadLaunch(self._app)
         QThreadPool.globalInstance().start(self._launcher)
         self._launcher.signals.gameClosed.connect(self.gameClosed)
         self._launcher.signals.error.connect(self.errorLaunching)
 
         self._timer.start()
+        self.signals.updateTime.emit(self)
 
     def gameClosed(self) -> None:
-        self.setBackground(QColor(Qt.white))
+        # self.setBackground(QColor(Qt.white))
         self._timer.stop()
 
         self.signals.gameClosed.emit()
@@ -89,7 +91,7 @@ class ListWidgetItem(QListWidgetItem):
     def errorLaunching(self, code: int) -> None:
         self.signals.errorLaunching.emit(code)
 
-    def updateData(self, app_json: dict) -> None:
+    def _updateData(self, app_json: dict) -> None:
         self._edit_form.title_field.clear()
         self._edit_form.path_field.clear()
 
@@ -103,13 +105,15 @@ class ListWidgetItem(QListWidgetItem):
         if path != "":
             self._app.path = path
 
-    def showEditForm(self) -> None:
-        self._edit_form.title_field.setPlaceholderText(self._app.title)
-        self._edit_form.path_field.setPlaceholderText(self._app.path)
+        self._updateIcon()
+
+    def _showEditForm(self) -> None:
+        self._edit_form.title_field.setText(self._app.title)
+        self._edit_form.path_field.setText(self._app.path)
         self._edit_form.show()
 
     # override
-    def setIcon(self):
+    def _updateIcon(self):
         if os.path.exists(self._app.path):
             icons = win32gui.ExtractIconEx(self._app.path, 0, 10)
             if len(icons[0]) != 0:

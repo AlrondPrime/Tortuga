@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QApplication, QFormLayout, QLineEdit, QPushButton, QDialog
+from PyQt5.QtWidgets import QWidget, QApplication, QFormLayout, QLineEdit, QPushButton
 
 
 class _AppEditFormSignals(QObject):

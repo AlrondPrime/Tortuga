@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QSystemTrayIcon, QMenu
 
 class _SystemTrayIconSignals(QObject):
     showWindow = pyqtSignal()
-    closeWindow = pyqtSignal()
+    exitApp = pyqtSignal()
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -16,7 +16,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self.menu = QMenu()
         self.menu.addAction("Open Tortuga", self.signals.showWindow)
-        self.menu.addAction("Close Tortuga", self.signals.closeWindow)
+        self.menu.addAction("Close Tortuga", self.signals.exitApp)
         self.setContextMenu(self.menu)
 
         self.show()

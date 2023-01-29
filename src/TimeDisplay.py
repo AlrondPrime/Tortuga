@@ -1,28 +1,20 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPaintEvent, QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QLabel, QFormLayout
+from PyQt5.QtWidgets import QLabel, QFormLayout, QFrame
+
+from Helpers import Style
 
 
-class TimeDisplay(QWidget):
+class TimeDisplay(QFrame):
     def __init__(self):
         super().__init__()
-        self.radius = 10
-        self.current_time_label = QLabel("N/A")
-        self.total_time_label = QLabel("N/A")
-        self.current_time_label.setAlignment(Qt.AlignRight)
-        self.total_time_label.setAlignment(Qt.AlignRight)
+        self.current_time_label = QLabel("Current session time:")
+        self.total_time_label = QLabel("Total played time:")
+        self.current_time_field = QLabel("N/A")
+        self.total_time_field = QLabel("N/A")
+        self.current_time_field.setAlignment(Qt.AlignRight)
+        self.total_time_field.setAlignment(Qt.AlignRight)
         self.time_layout = QFormLayout()
-        self.time_layout.addRow("Current session time:", self.current_time_label)
-        self.time_layout.addRow("Total played time:", self.total_time_label)
+        self.time_layout.addRow(self.current_time_label, self.current_time_field)
+        self.time_layout.addRow(self.total_time_label, self.total_time_field)
         self.setLayout(self.time_layout)
-
-    # override
-    def paintEvent(self, e: QPaintEvent) -> None:
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(Qt.black, 1, Qt.SolidLine, Qt.RoundCap))
-        painter.drawRoundedRect(0, 0, self.width(), self.height(), self.radius, self.radius)
-        painter.end()
-
-        super().paintEvent(e)
+        self.setStyleSheet(Style("./styles/TimeDisplay.qss"))

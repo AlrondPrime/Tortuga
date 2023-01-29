@@ -1,8 +1,9 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, \
-    QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter
+    QWidget, QVBoxLayout, QToolBar, QToolButton, QSplitter, QPushButton
 
+from Helpers import Style
 from ListWidget import ListWidget
 from ListWidgetItem import ListWidgetItem
 from SystemTrayIcon import SystemTrayIcon
@@ -14,6 +15,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Tortuga")
         self.setWindowIcon(QIcon("./resources/Shipwreck.ico"))
+        self.setStyleSheet(Style("./styles/MainWindow.qss"))
         desktop = QApplication.desktop()
         x = (desktop.width() - self.width() // 2) // 2
         y = (desktop.height() - self.height() // 2) // 2
@@ -37,13 +39,16 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
         splitter.showMaximized()
 
-        toolbar = QToolBar()
-        toolbar.setMovable(False)
-        toolbar.addAction("Add app", self.list.addApp)
-        toolbar.addWidget(splitter)
-        toolbar.addWidget(hint_btn)
-        toolbar.setIconSize(QSize(16, 16))
-        self.addToolBar(toolbar)
+        self.add_app_btn = QPushButton("Add app")
+        self.add_app_btn.pressed.connect(self.list.addApp)
+
+        self.toolbar = QToolBar()
+        self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.add_app_btn)
+        self.toolbar.addWidget(splitter)
+        self.toolbar.addWidget(hint_btn)
+        self.toolbar.setIconSize(QSize(16, 16))
+        self.addToolBar(self.toolbar)
 
         # Central widget
         v_layout = QVBoxLayout()
@@ -59,7 +64,7 @@ class MainWindow(QMainWindow):
         self.list.signals.gameClosed.connect(self.showNormal)
         self.list.signals.gameLaunched.connect(self.hide)
         self.tray_icon.signals.showWindow.connect(self.showNormal)
-        self.tray_icon.signals.closeWindow.connect(self.exit)
+        self.tray_icon.signals.exitApp.connect(self.exit)
         self.tray_icon.activated.connect(self.tray_icon.activateEvent)
 
     def exit(self) -> None:
@@ -76,6 +81,6 @@ class MainWindow(QMainWindow):
     def updateTime(self, item: ListWidgetItem) -> None:
         if item.isSelected():
             (hours, minutes) = item.currentTime()
-            self.time_display.current_time_label.setText(str(hours) + "h " + str(minutes) + "m")
+            self.time_display.current_time_field.setText(str(hours) + "h " + str(minutes) + "m")
             (hours, minutes) = item.totalTime()
-            self.time_display.total_time_label.setText(str(hours) + "h " + str(minutes) + "m")
+            self.time_display.total_time_field.setText(str(hours) + "h " + str(minutes) + "m")

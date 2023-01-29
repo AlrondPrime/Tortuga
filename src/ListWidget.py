@@ -1,14 +1,15 @@
+import json
 import os.path
 import shutil
-import json
 from re import search
 
-from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal, QRect, QEvent
-from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent, QPaintEvent, QPainter, QBrush, QPen
+from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
+from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent
 from PyQt5.QtWidgets import QListWidget, QFileDialog
 
-from ListWidgetItem import ListWidgetItem
 from App import App
+from Helpers import Style
+from ListWidgetItem import ListWidgetItem
 
 
 class _ListSignals(QObject):
@@ -26,12 +27,12 @@ class ListWidget(QListWidget):
         super(ListWidget, self).__init__()
         self._path = R"./data/Tortuga.json"
         self._backup_path = R"./data/Tortuga-backup.json"
-        self.radius = 10
+        self.setStyleSheet(Style("./styles/ListWidget.qss"))
         self.signals = _ListSignals()
 
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(itemChange)
-        self.setMouseTracking(True)
+        self.setDragDropMode(QListWidget.InternalMove)
 
         for item in self.load():
             app = App(item)
@@ -40,25 +41,22 @@ class ListWidget(QListWidget):
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
 
-        self.setStyleSheet("border: 0px; background-color: rgb(240, 240, 240)")
-        self.viewport().installEventFilter(self)
-
     # override
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         item = self.itemAt(event.pos())
         if item:
             self.launchGame(item)
-            event.accept()
-        else:
-            event.ignore()
 
     # override
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Delete:
             self.removeGame(self.currentRow())
-            event.accept()
-
-        return super().keyPressEvent(event)
+        elif event.key() == Qt.Key_Down and self.currentRow() == self.count() - 1:
+            self.setCurrentRow(0)
+        elif event.key() == Qt.Key_Up and self.currentRow() == 0:
+            self.setCurrentRow(self.count() - 1)
+        else:
+            super().keyPressEvent(event)
 
     # override
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
@@ -104,7 +102,7 @@ class ListWidget(QListWidget):
                           "minutes": 0
                           }
                      })
-                item = ListWidgetItem(result.group('name'))
+                item = ListWidgetItem()
                 item.signals.updateTime.connect(self.signals.updateTime)
                 item.setApp(app)
                 self.addItem(item)
@@ -152,17 +150,4 @@ class ListWidget(QListWidget):
         shutil.copy(self._path, self._backup_path)
 
     def restore_data(self) -> None:
-        pass
         shutil.copy(self._backup_path, self._path)
-
-    # override
-    def eventFilter(self, object: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Paint and object is self.viewport():
-            painter = QPainter()
-            painter.begin(object)
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(Qt.black, 1, Qt.SolidLine, Qt.RoundCap))
-            painter.drawRoundedRect(0, 0, self.width(), self.height(), self.radius, self.radius)
-            painter.end()
-
-        return super().eventFilter(object, event)
