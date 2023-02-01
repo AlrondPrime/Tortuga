@@ -1,0 +1,28 @@
+* { font-family: "Cascadia Mono"; }
+
+QMenu::item {
+    color: white;
+    background-color: #313335;
+
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 4px;
+
+    padding: 3px;
+    margin: 3px;
+    border-color: transparent;
+}
+
+QMenu::item:selected {
+    color: black;
+    background-color: #cc7832;
+}
+
+QMenu {
+    background-color: #2b2b2b;
+
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 4px;
+    border-color: white;
+}

@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QApplication, QFormLayout, QLineEdit, QPushButton
 
+from Helpers import Style
+
 
 class _AppEditFormSignals(QObject):
     dataEdited = pyqtSignal(dict)
@@ -34,6 +36,8 @@ class AppEditForm(QWidget):
         x = (desktop.width() - self.width() // 2) // 2
         y = (desktop.height() - self.height() // 2) // 2
         self.move(x, y)
+
+        self.setStyleSheet(Style("./styles/AppEditForm.qss"))
 
     def onSavePressed(self) -> None:
         self.close()

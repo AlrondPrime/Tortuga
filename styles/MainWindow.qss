@@ -1,4 +1,4 @@
-* {font-family: "Cascadia Mono";}
+* { font-family: "Cascadia Mono";   }
 
 MainWindow {
     background-color: #313335;
@@ -9,16 +9,18 @@ QToolBar {
 }
 
 QPushButton {
-    background-color: #cc7832;
     color: white;
+    background-color: #313335;
 
     border-width: 1px;
     border-style: solid;
     border-radius: 4px;
-    border-color: transparent;
+    border-color: white;
 
-    padding: 1px;
-    margin: 1px;
+    padding-right: 3px;
+    padding-left: 3px;
+    padding-bottom: 3px;
+    margin: 2px;
     margin-left: 8px;
 }
 

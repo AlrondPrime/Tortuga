@@ -1,11 +1,12 @@
-* {font-family: "Cascadia Mono";}
+* { font-family: "Cascadia Mono"; }
 
 TimeDisplay {
+    background-color: #2b2b2b;
+
     border-width: 1px;
     border-style: solid;
     border-radius: 10px;
 
-    background-color: #2b2b2b;
 }
 
 QLabel {

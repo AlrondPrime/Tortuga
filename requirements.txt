@@ -1,5 +1,5 @@
 PyQt5~=5.15.7
-pywin32~=305 # includes win32gui
+pywin32==305 # includes win32gui
 psutil~=5.9.4
 
 # Optional

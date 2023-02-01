@@ -11,7 +11,7 @@ class App:
         self.current_hours = 0
         self.current_minutes = 0
 
-    def toJSON(self):
+    def toJSON(self) -> dict:
         return {
                 "title": self.title,
                 "path": self.path,
@@ -21,7 +21,7 @@ class App:
                     }
             }
 
-    def fromJSON(self, app_json: dict):
+    def fromJSON(self, app_json: dict) -> None:
         self.title = app_json['title']
         self.path = app_json['path']
         self.hours = app_json['total_time']['hours']

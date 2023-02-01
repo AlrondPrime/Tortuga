@@ -1,0 +1,32 @@
+* {
+    color: white;
+    font-family: "Cascadia Mono";
+}
+
+QWidget {
+    background-color: #313335;
+}
+
+QPushButton {
+    background-color: #2b2b2b;
+
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 4px;
+    border-color: white;
+
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+QPushButton:hover {
+    color: black;
+    background-color: #cc7832;
+}
+
+QLineEdit {
+    background-color: #2b2b2b;
+    selection-background-color: #cc7832;
+
+    padding: 1px;
+}

@@ -4,4 +4,4 @@
 "./src/Main.py" `
 --name "Tortuga" `
 --distpath "." `
---add-data "./venv/Lib/site-packages/pywin32_system32/pywintypes311.dll;."
+--add-data "./venv/Lib/site-packages/pywin32_system32/pywintypes*.dll;."
