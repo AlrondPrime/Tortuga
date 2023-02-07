@@ -4,7 +4,7 @@ import shutil
 from re import search
 
 from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
-from PyQt5.QtGui import QMouseEvent, QKeyEvent, QColor, QContextMenuEvent
+from PyQt5.QtGui import QMouseEvent, QKeyEvent, QContextMenuEvent
 from PyQt5.QtWidgets import QListWidget, QFileDialog
 
 from App import App
@@ -34,9 +34,9 @@ class ListWidget(QListWidget):
         self.itemChanged.connect(itemChange)
         self.setDragDropMode(QListWidget.InternalMove)
 
-        for item in self.load():
-            app = App(item)
-            item = ListWidgetItem()
+        for app_json in self.load():
+            app = App(app_json)
+            item = ListWidgetItem(self)
             item.setApp(app)
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
@@ -76,17 +76,11 @@ class ListWidget(QListWidget):
     def launchGame(self, item: ListWidgetItem) -> None:
         if item.exists():
             item.launchGame()
-            item.signals.gameClosed.connect(self.gameClosed)
 
             self.signals.gameLaunched.emit()
 
     def errorLaunching(self, code: int) -> None:
         print("An error occurred while launching game with error code ", code)
-
-        for i in range(self.count()):
-            item = self.item(i)
-            item.setBackground(QColor(Qt.white))
-
         QCoreApplication.exit(-1)
 
     def addApp(self) -> None:
@@ -102,8 +96,7 @@ class ListWidget(QListWidget):
                           "minutes": 0
                           }
                      })
-                item = ListWidgetItem()
-                item.signals.updateTime.connect(self.signals.updateTime)
+                item = ListWidgetItem(self)
                 item.setApp(app)
                 self.addItem(item)
                 self.dump()
@@ -125,7 +118,7 @@ class ListWidget(QListWidget):
 
             json.dump(data, file)
 
-    def load(self) -> list:
+    def load(self) -> list[dict[str, str] | dict[str, dict[str, int]]]:
         if not os.path.exists(self._path):
             os.makedirs("./data", exist_ok=True)
             with open(self._path, "w") as file:

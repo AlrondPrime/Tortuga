@@ -1,3 +1,5 @@
+import sys
+
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QStyle, QApplication, \
@@ -68,14 +70,17 @@ class MainWindow(QMainWindow):
         self.tray_icon.activated.connect(self.tray_icon.activateEvent)
 
     def exit(self) -> None:
+        self.close()
         self.tray_icon.hide()
         self.list.dump()
-        self.close()
         QApplication.exit(0)
 
     # override
     def closeEvent(self, event) -> None:
-        self.hide()
+        if sys.executable[-10:-4] == "python":  # running in IDE
+            self.exit()
+        else:
+            self.hide()
         event.ignore()
 
     def updateTime(self, item: ListWidgetItem) -> None:

@@ -18,8 +18,8 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self.menu = QMenu()
         self.menu.setStyleSheet(Style("./styles/QMenu.qss"))
-        self.menu.addAction("Open Tortuga", self.signals.showWindow)
-        self.menu.addAction("Close Tortuga", self.signals.exitApp)
+        self.menu.addAction("Show", self.signals.showWindow)
+        self.menu.addAction("Exit", self.signals.exitApp)
         self.setContextMenu(self.menu)
 
         self.show()

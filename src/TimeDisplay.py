@@ -7,8 +7,8 @@ from Helpers import Style
 class TimeDisplay(QFrame):
     def __init__(self):
         super().__init__()
-        self.current_time_label = QLabel("Current session time:")
-        self.total_time_label = QLabel("Total played time:")
+        self.current_time_label = QLabel("Current session:")
+        self.total_time_label = QLabel("Total played:")
         self.current_time_field = QLabel("N/A")
         self.total_time_field = QLabel("N/A")
         self.current_time_field.setAlignment(Qt.AlignRight)

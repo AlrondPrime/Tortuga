@@ -34,12 +34,40 @@ ListWidget::item {
     margin-right: 5px;
 }
 
+QScrollBar {
+    background-color: #313335;
+
+    border-color: white;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 4px;
+}
+
 QScrollBar:vertical {
-    background: #313335;
     width: 8px;
 }
 
 QScrollBar:horizontal {
-    background: #313335;
     height: 8px;
 }
+
+QScrollBar::handle {
+    background-color: #2b2b2b;
+
+    border-color: white;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 2px;
+}
+
+QScrollBar::sub-page, QScrollBar::add-page {
+    background-color: white;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line,
+ QScrollBar::down-arrow, QScrollBar::up-arrow,
+  QScrollBar::down-button, QScrollBar::up-button {
+      height: 0px;
+      width: 0px;
+}
+

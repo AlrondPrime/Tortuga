@@ -19,12 +19,12 @@ class _ListWidgetItemSignals(QObject):
 
 
 class ListWidgetItem(QListWidgetItem):
-    def __init__(self):
-        super(ListWidgetItem, self).__init__()
-        self.setFlags(self.flags() | Qt.ItemIsEditable)
-        self.signals = _ListWidgetItemSignals()
-        self._launcher = None
+    def __init__(self, parent):
+        super(ListWidgetItem, self).__init__(parent)
         self._app = App()
+        self.signals = _ListWidgetItemSignals()
+        self.setFlags(self.flags() | Qt.ItemIsEditable)
+        self._launcher = None
         self._timer = QTimer()
         self._timer.setInterval(60_000)  # 1 minute
 
@@ -32,6 +32,8 @@ class ListWidgetItem(QListWidgetItem):
 
         self._timer.timeout.connect(self._increaseTime)
         self._edit_form.signals.dataEdited.connect(self._updateData)
+        self.signals.updateTime.connect(self.listWidget().signals.updateTime)
+        self.signals.gameClosed.connect(self.listWidget().gameClosed)
 
         self.context_menu = QMenu()
         self.context_menu.setStyleSheet(Style("./styles/QMenu.qss"))
@@ -96,7 +98,7 @@ class ListWidgetItem(QListWidgetItem):
     def errorLaunching(self, code: int) -> None:
         self.signals.errorLaunching.emit(code)
 
-    def _updateData(self, app_json: dict) -> None:
+    def _updateData(self, app_json: dict[str, str]) -> None:
         self._edit_form.title_field.clear()
         self._edit_form.path_field.clear()
 
