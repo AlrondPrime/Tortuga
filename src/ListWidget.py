@@ -5,7 +5,7 @@ from re import search
 
 from PyQt5.QtCore import Qt, QCoreApplication, QObject, pyqtSignal
 from PyQt5.QtGui import QMouseEvent, QKeyEvent, QContextMenuEvent
-from PyQt5.QtWidgets import QListWidget, QFileDialog
+from PyQt5.QtWidgets import QListWidget, QFileDialog, QSizePolicy
 
 from App import App
 from Helpers import Style
@@ -25,21 +25,29 @@ def itemChange(item: ListWidgetItem):
 class ListWidget(QListWidget):
     def __init__(self):
         super(ListWidget, self).__init__()
-        self._path = R"./data/Tortuga.json"
+        self._data_path = R"./data/Tortuga.json"
         self._backup_path = R"./data/Tortuga-backup.json"
         self.setStyleSheet(Style("./styles/ListWidget.qss"))
         self.signals = _ListSignals()
+        self.max_item_length = 0
 
         self.itemActivated.connect(self.launchGame)
         self.itemChanged.connect(itemChange)
         self.setDragDropMode(QListWidget.InternalMove)
 
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred))
+
         for app_json in self.load():
             app = App(app_json)
+            if len(app.title) > self.max_item_length:
+                self.max_item_length = len(app.title)
             item = ListWidgetItem(self)
             item.setApp(app)
             item.signals.updateTime.connect(self.signals.updateTime)
             self.addItem(item)
+
+        self.setFixedHeight((26 + 8) * self.count())
+        self.setFixedWidth(self.max_item_length * 11)
 
     # override
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -98,7 +106,7 @@ class ListWidget(QListWidget):
                      })
                 item = ListWidgetItem(self)
                 item.setApp(app)
-                self.addItem(item)
+                self.insertItem(0, self.takeItem(self.count() - 1))
                 self.dump()
             else:
                 print("Illegal path!")
@@ -111,7 +119,7 @@ class ListWidget(QListWidget):
             yield self.item(i)
 
     def dump(self) -> None:
-        with open(self._path, "w") as file:
+        with open(self._data_path, "w") as file:
             data = []
             for item in self.all_items():
                 data.append(item.toJSON())
@@ -119,28 +127,29 @@ class ListWidget(QListWidget):
             json.dump(data, file)
 
     def load(self) -> list[dict[str, str] | dict[str, dict[str, int]]]:
-        if not os.path.exists(self._path):
+        if not os.path.exists(self._data_path):
             os.makedirs("./data", exist_ok=True)
-            with open(self._path, "w") as file:
+            with open(self._data_path, "w") as file:
                 file.write("[]")
 
         if not os.path.exists(self._backup_path):
             with open(self._backup_path, "w") as file:
                 file.write("[]")
 
-        if os.path.getmtime(self._path) > os.path.getmtime(self._backup_path):
+        # File is not empty and contains more than empty list
+        if os.path.getsize(self._data_path) > 2:
             self.backup_data()
-        elif os.path.getmtime(self._path) < os.path.getmtime(self._backup_path):
+        else:
             self.restore_data()
 
         try:
-            with open(self._path, "r") as file:
+            with open(self._data_path, "r") as file:
                 return json.load(file)
         except json.JSONDecodeError:
             return []
 
     def backup_data(self) -> None:
-        shutil.copy(self._path, self._backup_path)
+        shutil.copy(self._data_path, self._backup_path)
 
     def restore_data(self) -> None:
-        shutil.copy(self._backup_path, self._path)
+        shutil.copy(self._backup_path, self._data_path)

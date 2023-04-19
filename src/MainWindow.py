@@ -22,7 +22,6 @@ class MainWindow(QMainWindow):
         x = (desktop.width() - self.width() // 2) // 2
         y = (desktop.height() - self.height() // 2) // 2
         self.move(x, y)
-        self.setFixedSize(278, 285)
 
         self.tray_icon = SystemTrayIcon()
 

@@ -19,7 +19,7 @@ class ThreadLaunch(QRunnable):
     # override
     def run(self):
         if os.path.exists(self._app.path):
-            result = search(r'(?P<name>.+)/.+.exe', self._app.path)
+            result = search(r'(?P<name>.+)[\\/].+.exe', self._app.path)
 
             if not result:
                 print("Error with path")

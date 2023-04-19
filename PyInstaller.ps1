@@ -6,3 +6,4 @@
 --distpath "." `
 --specpath "./build/Tortuga" `
 --add-data "../../venv/Lib/site-packages/pywin32_system32/pywintypes*.dll;."
+pause

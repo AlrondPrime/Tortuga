@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QFormLayout, QFrame
+from PyQt5.QtWidgets import QLabel, QFormLayout, QFrame, QSizePolicy
 
 from Helpers import Style
 
@@ -18,3 +18,4 @@ class TimeDisplay(QFrame):
         self.time_layout.addRow(self.total_time_label, self.total_time_field)
         self.setLayout(self.time_layout)
         self.setStyleSheet(Style("./styles/TimeDisplay.qss"))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed))
